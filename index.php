@@ -58,8 +58,12 @@
 
     function printPrenotazioni() {
 
-      echo "Prenotazione "
-            . $this->idPrenotazioni . ": ";
+      echo "Prenotazione numero: "
+            . $this->idPrenotazioni
+            . "<br>"
+            . "Creata il: "
+            . $this->updatedAt
+            . "<br>";
     }
   }
 
@@ -103,7 +107,7 @@
     function printNameLastname() {
 
       echo $this->name
-           ."-"
+           ." "
            . $this->lastname
            . "<br>";
     }
@@ -153,11 +157,14 @@
     function printStanzeInfo() {
 
       echo "Numero stanza: "
-           . $this->roomNumber . "<br>"
+           . $this->roomNumber
+           . "<br>"
            . "Piano: "
-           . $this->floor ."<br>"
+           . $this->floor
+           ."<br>"
            . "Letti: "
-           . $this->beds . "<br>";
+           . $this->beds
+           . "<br>";
     }
   }
 
@@ -203,9 +210,60 @@
     function printConfigurazioneInfo() {
 
       echo "Configurazione: "
-            . $this->title . "<br>"
+            . $this->title
+            . "<br>"
             . "Descrizione: "
-            . $this->description . "<br>" . "<br>";
+            . $this->description
+            . "<br>";
+    }
+  }
+
+  class Pagamento {
+
+    private $status;
+    private $price;
+
+    function __construct($status, $price) {
+
+      $this->status = $status;
+      $this->price = $price;
+    }
+
+    function getPagamentiInfo($conn, $prenotazioneID) {
+
+      $sql = "SELECT pagamenti.status, pagamenti.price
+              FROM prenotazioni
+              JOIN pagamenti
+              ON prenotazioni.id = pagamenti.prenotazione_id
+              WHERE pagamenti.prenotazione_id = $prenotazioneID";
+
+      $result = $conn->query($sql);
+      $pagamenti = [];
+
+      if ($result->num_rows > 0) {
+
+        while($row = $result->fetch_assoc()) {
+
+          $pagamenti[] = new Pagamento(
+                                $row["status"],
+                                $row["price"]);
+        }
+      } else {
+
+          return;
+        }
+      return $pagamenti;
+    }
+
+    function printPagamentiInfo() {
+
+      echo "Stato: "
+           . $this->status . "<br>"
+           . "Prezzo: "
+           . $this->price
+           . "$"
+           . "<br>"
+           . "<br>";
     }
   }
 
@@ -227,20 +285,26 @@
     $ospiti = Ospite::getOspiteById($conn, $prenotazioneID);
     $stanze = Stanza::getStanzeInfo($conn, $prenotazioneID);
     $configurazioni = Configurazione::getConfigurazioneInfo($conn, $configurazioneID);
+    $pagamenti = Pagamento::getPagamentiInfo($conn, $prenotazioneID);
 
     foreach ($ospiti as $ospite) {
 
       $printOspite = $ospite->printNameLastname();
 
-      foreach ($stanze as $stanza) {
+    }
+    foreach ($stanze as $stanza) {
 
-        $printStanzaInfo = $stanza->printStanzeInfo();
-      }
+      $printStanzaInfo = $stanza->printStanzeInfo();
+    }
 
-      foreach ($configurazioni as $configurazione) {
+    foreach ($configurazioni as $configurazione) {
 
-        $printConfigurazioneInfo = $configurazione->printConfigurazioneInfo();
-      }
+      $printConfigurazioneInfo = $configurazione->printConfigurazioneInfo();
+    }
+
+    foreach ($pagamenti as $pagamento) {
+
+      $printPagamentiInfo = $pagamento->printPagamentiInfo();
     }
 
   }
